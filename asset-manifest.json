@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/gcal-wrapped/static/css/main.c3e04619.css",
+    "main.js": "/gcal-wrapped/static/js/main.6fba3237.js",
+    "static/js/453.a82b5ffc.chunk.js": "/gcal-wrapped/static/js/453.a82b5ffc.chunk.js",
+    "index.html": "/gcal-wrapped/index.html",
+    "main.c3e04619.css.map": "/gcal-wrapped/static/css/main.c3e04619.css.map",
+    "main.6fba3237.js.map": "/gcal-wrapped/static/js/main.6fba3237.js.map",
+    "453.a82b5ffc.chunk.js.map": "/gcal-wrapped/static/js/453.a82b5ffc.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.c3e04619.css",
+    "static/js/main.6fba3237.js"
+  ]
+}
