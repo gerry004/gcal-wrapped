@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+h1 {
+  @apply text-4xl font-semibold text-primary md:text-6xl;
+}
+
+h2 {
+  @apply text-2xl font-semibold text-primary md:text-3xl;
+}
+
+p {
+  @apply text-gray text-base md:text-lg;
+}
+
+li {
+  @apply text-gray text-base md:text-lg;
+}
