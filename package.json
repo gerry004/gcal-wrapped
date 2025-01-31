@@ -1,56 +1,27 @@
 {
-  "homepage": "https://gerry004.github.io/gcal-wrapped",
   "name": "gcal-wrapped",
   "version": "0.1.0",
   "private": true,
-  "dependencies": {
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "autoprefixer": "^10.4.19",
-    "axios": "^1.6.8",
-    "chart.js": "^4.4.3",
-    "chartjs-adapter-date-fns": "^3.0.0",
-    "date-fns": "^3.6.0",
-    "dexie": "^4.0.4",
-    "gh-pages": "^6.3.0",
-    "googleapis": "^135.1.0",
-    "https": "^1.0.0",
-    "postcss": "^8.4.38",
-    "react": "^18.3.1",
-    "react-chartjs-2": "^5.2.0",
-    "react-datepicker": "^6.9.0",
-    "react-dom": "^18.3.1",
-    "react-icons": "^5.2.0",
-    "react-router-dom": "^6.23.0",
-    "react-scripts": "^5.0.1",
-    "tailwindcss": "^3.4.3",
-    "web-vitals": "^2.1.4"
-  },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "next": "15.1.6"
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "eslint": "^9",
+    "eslint-config-next": "15.1.6",
+    "@eslint/eslintrc": "^3"
   }
 }
