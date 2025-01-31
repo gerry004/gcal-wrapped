@@ -25,10 +25,8 @@ const InputForm: React.FC = () => {
 
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
-      console.log('Token Response:', tokenResponse);
       setAccessToken(tokenResponse.access_token);
-      
-      // Fetch calendars after successful login
+
       try {
         const response = await fetch('/api/calendar/calendars', {
           method: 'POST',
