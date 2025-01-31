@@ -7,11 +7,6 @@ import InputForm from '@/components/InputForm';
 export default function Home() {
   const router = useRouter();
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    router.push('/wrapped');
-  };
-
   return (
     <div className="min-h-screen p-8 bg-white flex items-center justify-center">
       <Navbar />
