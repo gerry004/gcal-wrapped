@@ -5,19 +5,44 @@ import React, { useState } from "react";
 import DatePicker from "./DatePicker";
 import Dropdown from "./Dropdown";
 import { useGoogleLogin } from '@react-oauth/google';
+import { useWrapped } from '@/context/WrappedContext';
+
+interface Calendar {
+  id: string;
+  summary: string;
+}
 
 const InputForm: React.FC = () => {
   const router = useRouter();
-  const [selectedOption, setSelectedOption] = useState('');
+  const { setEvents, setDateRange } = useWrapped();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEventsState] = useState<any[]>([]);
+  const [calendars, setCalendars] = useState<Calendar[]>([]);
+  const [selectedCalendar, setSelectedCalendar] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const login = useGoogleLogin({
-    onSuccess: tokenResponse => {
+    onSuccess: async (tokenResponse) => {
       console.log('Token Response:', tokenResponse);
       setAccessToken(tokenResponse.access_token);
+      
+      // Fetch calendars after successful login
+      try {
+        const response = await fetch('/api/calendar/calendars', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ accessToken: tokenResponse.access_token }),
+        });
+        
+        const { calendars } = await response.json();
+        setCalendars(calendars);
+      } catch (error) {
+        console.error('Error fetching calendars:', error);
+      }
     },
     scope: 'https://www.googleapis.com/auth/calendar.readonly',
   });
@@ -26,9 +51,30 @@ const InputForm: React.FC = () => {
     login();
   };
 
-  const handleGetEvents = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
     if (!accessToken) {
-      alert('Please sign in with Google first');
+      setError('Please sign in with Google first');
+      return;
+    }
+
+    if (!selectedCalendar) {
+      setError('Please select a calendar');
+      return;
+    }
+
+    if (!startDate || !endDate) {
+      setError('Please select both start and end dates');
+      return;
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (end < start) {
+      setError('End date must be after start date');
       return;
     }
 
@@ -38,26 +84,35 @@ const InputForm: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ accessToken }),
+        body: JSON.stringify({ 
+          accessToken,
+          calendarId: selectedCalendar,
+          startDate: startDate,
+          endDate: endDate
+        }),
       });
       
-      const { events } = await response.json();
-      setEvents(events);
-      console.log('Today\'s events:', events);
+      const data = await response.json();
+      
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
+
+      // Update context instead of using server action
+      setEvents(data.events);
+      setDateRange({ startDate, endDate });
+      router.push('/wrapped');
     } catch (error) {
       console.error('Error fetching events:', error);
+      setError('Failed to fetch events');
     }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    router.push('/wrapped');
   };
 
   return (
     <div className="flex flex-col items-center bg-gray-100 p-6 rounded-lg shadow-md">
       <h2 className="text-gray-700 text-2xl font-semibold my-2">Generate Calendar Wrapped</h2>
-      <div className="flex gap-4 mb-4 w-full">
+      <div className="mb-4 w-full">
         <button
           onClick={handleGoogleSignIn}
           className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-50 transition-colors w-full"
@@ -65,36 +120,39 @@ const InputForm: React.FC = () => {
           <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
           Sign in with Google
         </button>
-        <button
-          onClick={handleGetEvents}
-          className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors w-full"
-        >
-          Get Today's Events
-        </button>
       </div>
       
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
         <Dropdown
-          value={selectedOption}
-          onSelect={setSelectedOption}
-          options={['Option 1', 'Option 2', 'Option 3']} // Replace with your options
-          placeholder="Select an option"
+          value={selectedCalendar}
+          onSelect={setSelectedCalendar}
+          options={calendars.map(cal => cal.id)}
+          optionLabels={calendars.map(cal => cal.summary)}
+          placeholder="Select a calendar"
+          disabled={!accessToken}
         />
         <DatePicker
           id="start-date"
           label="Start Date"
           className="w-full"
+          value={startDate}
+          onChange={setStartDate}
         />
         <DatePicker
           id="end-date"
           label="End Date"
           className="w-full"
+          value={endDate}
+          onChange={setEndDate}
         />
+        {error && (
+          <p className="text-red-500 text-sm">{error}</p>
+        )}
         <button
           type="submit"
           className="bg-blue-500 text-white font-semibold p-3 rounded-lg transition duration-300 ease-in-out transform hover:scale-105"
         >
-          Submit
+          Generate Wrapped
         </button>
       </form>
 

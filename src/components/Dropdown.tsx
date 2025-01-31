@@ -5,11 +5,19 @@ interface DropdownProps {
   value?: string;
   onSelect: (value: string) => void;
   options: string[];
+  optionLabels?: string[];
   placeholder: string;
   disabled?: boolean;
 }
 
-const Dropdown: React.FC<DropdownProps> = ({ value, onSelect, options, placeholder, disabled }) => {
+const Dropdown: React.FC<DropdownProps> = ({ 
+  value, 
+  onSelect, 
+  options, 
+  optionLabels, 
+  placeholder, 
+  disabled 
+}) => {
   return (
     <select
       value={value}
@@ -18,8 +26,10 @@ const Dropdown: React.FC<DropdownProps> = ({ value, onSelect, options, placehold
       disabled={disabled}
     >
       <option value="" disabled>{placeholder}</option>
-      {options.map((option) => (
-        <option key={option} value={option}>{option}</option>
+      {options.map((option, index) => (
+        <option key={option} value={option}>
+          {optionLabels?.[index] || option}
+        </option>
       ))}
     </select>
   );

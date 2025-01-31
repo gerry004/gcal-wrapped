@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { accessToken } = await request.json();
+    const { accessToken, calendarId = 'primary', startDate, endDate } = await request.json();
     
     const oauth2Client = new google.auth.OAuth2();
     oauth2Client.setCredentials({
@@ -12,14 +12,17 @@ export async function POST(request: NextRequest) {
 
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
     
-    const now = new Date();
-    const startOfDay = new Date(now.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(now.setHours(23, 59, 59, 999));
+    // Set time to start of day for start date and end of day for end date
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
 
     const response = await calendar.events.list({
-      calendarId: 'primary',
-      timeMin: startOfDay.toISOString(),
-      timeMax: endOfDay.toISOString(),
+      calendarId: calendarId,
+      timeMin: start.toISOString(),
+      timeMax: end.toISOString(),
       singleEvents: true,
       orderBy: 'startTime',
     });
