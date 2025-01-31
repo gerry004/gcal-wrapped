@@ -23,8 +23,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // You need to replace 'YOUR_GOOGLE_CLIENT_ID' with your actual Google OAuth client ID
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
+  
+  if (!clientId) {
+    console.error('Google Client ID is not defined');
+  }
 
   return (
     <html lang="en">
