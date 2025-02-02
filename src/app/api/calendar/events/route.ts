@@ -1,15 +1,18 @@
 import { google } from 'googleapis';
 import { NextRequest, NextResponse } from 'next/server';
+import { getValidToken, oauth2Client } from '@/utils/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    const { accessToken, calendarId = 'primary', startDate, endDate } = await request.json();
+    const { calendarId = 'primary', startDate, endDate } = await request.json();
     
-    const oauth2Client = new google.auth.OAuth2();
-    oauth2Client.setCredentials({
-      access_token: accessToken
-    });
+    // Get valid token from cookie
+    const accessToken = await getValidToken();
+    if (!accessToken) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
 
+    oauth2Client.setCredentials({ access_token: accessToken });
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
     
     // Set time to start of day for start date and end of day for end date

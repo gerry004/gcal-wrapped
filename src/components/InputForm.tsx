@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DatePicker from "./DatePicker";
 import Dropdown from "./Dropdown";
 import { useGoogleLogin } from '@react-oauth/google';
@@ -14,7 +14,7 @@ interface Calendar {
 
 const InputForm: React.FC = () => {
   const router = useRouter();
-  const { setEvents, setDateRange } = useWrapped();
+  const { setEvents, setDateRange, setIsDataLoaded } = useWrapped();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -23,26 +23,71 @@ const InputForm: React.FC = () => {
   const [selectedCalendar, setSelectedCalendar] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const login = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      setAccessToken(tokenResponse.access_token);
+  useEffect(() => {
+    // Check for existing token on component mount
+    checkExistingToken();
+  }, []);
 
-      try {
-        const response = await fetch('/api/calendar/calendars', {
+  const checkExistingToken = async () => {
+    try {
+      const response = await fetch('/api/auth/check-token');
+      const data = await response.json();
+      
+      if (data.accessToken) {
+        setAccessToken(data.accessToken);
+        // Fetch calendars with the existing token
+        const calResponse = await fetch('/api/calendar/calendars', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ accessToken: tokenResponse.access_token }),
+          body: JSON.stringify({ accessToken: data.accessToken }),
         });
         
-        const { calendars } = await response.json();
+        const { calendars } = await calResponse.json();
         setCalendars(calendars);
+      }
+    } catch (error) {
+      console.error('Error checking token:', error);
+    }
+  };
+
+  const login = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        // Send the access token to our backend to store in cookie
+        const response = await fetch('/api/auth/store-token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            access_token: tokenResponse.access_token,
+          }),
+        });
+
+        if (response.ok) {
+          setAccessToken(tokenResponse.access_token);
+          // Fetch calendars...
+          const calResponse = await fetch('/api/calendar/calendars', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ accessToken: tokenResponse.access_token }),
+          });
+          
+          const { calendars } = await calResponse.json();
+          setCalendars(calendars);
+        }
       } catch (error) {
-        console.error('Error fetching calendars:', error);
+        console.error('Error storing token:', error);
       }
     },
     scope: 'https://www.googleapis.com/auth/calendar.readonly',
+    onError: (errorResponse) => {
+      console.error('Login Failed:', errorResponse);
+    },
   });
 
   const handleGoogleSignIn = () => {
@@ -97,9 +142,10 @@ const InputForm: React.FC = () => {
         return;
       }
 
-      // Update context instead of using server action
+      // Update context (this will now also save to localStorage)
       setEvents(data.events);
       setDateRange({ startDate, endDate });
+      setIsDataLoaded(true);
       router.push('/wrapped');
     } catch (error) {
       console.error('Error fetching events:', error);

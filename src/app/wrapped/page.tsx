@@ -1,8 +1,7 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Navbar from '@/components/Navbar';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { getWrappedData } from '@/app/actions';
+import { useRouter } from 'next/navigation';
 import { useWrapped } from '@/context/WrappedContext';
 
 interface Event {
@@ -26,14 +25,17 @@ interface DateRange {
 
 export default function Wrapped() {
   const router = useRouter();
-  const { events, dateRange } = useWrapped();
+  const { events, dateRange, isDataLoaded, isInitialized } = useWrapped();
 
   useEffect(() => {
-    if (!events.length) {
+    if (isInitialized && !isDataLoaded) {
       router.push('/');
-      return;
     }
-  }, [events, router]);
+  }, [isInitialized, isDataLoaded, router]);
+
+  if (!isInitialized || !isDataLoaded) {
+    return <div>Loading...</div>;
+  }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
