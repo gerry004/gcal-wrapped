@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
       timeMax: end.toISOString(),
       singleEvents: true,
       orderBy: 'startTime',
+      colorId: true,
     });
 
     return NextResponse.json({ events: response.data.items });

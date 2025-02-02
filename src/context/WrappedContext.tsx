@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
-interface Event {
+export interface Event {
   id: string;
   summary: string;
   start: {
@@ -13,6 +13,7 @@ interface Event {
     date?: string;
   };
   description?: string;
+  colorId?: string;
 }
 
 interface DateRange {
