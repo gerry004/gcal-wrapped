@@ -164,6 +164,79 @@ export default function Wrapped() {
   // Add this to the component, after calculating totalHours
   const totalGapHours = calculateDailyGaps(events);
 
+  // Add this before the return statement, after calculating colorBreakdown
+  const eventCountByColor = events.reduce((acc: { [key: string]: number }, event) => {
+    const colorId = event.colorId || 'default';
+    acc[colorId] = (acc[colorId] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Replace the longestEvent calculation with this
+  const longestEvents = events.reduce((acc, event) => {
+    const duration = calculateDuration(
+      event.start.dateTime || event.start.date || '',
+      event.end.dateTime || event.end.date || ''
+    );
+    
+    if (acc.length === 0) {
+      return [{ event, duration }];
+    }
+    
+    if (duration > acc[0].duration) {
+      return [{ event, duration }];
+    }
+    
+    if (Math.abs(duration - acc[0].duration) < 0.01) { // Handle floating point comparison
+      return [...acc, { event, duration }];
+    }
+    
+    return acc;
+  }, [] as Array<{ event: Event, duration: number }>);
+
+  // Update the dateBreakdown calculation to include color tracking
+  const dateBreakdown = events.reduce((acc: { 
+    [key: string]: { 
+      count: number; 
+      hours: number;
+      colorHours: { [colorId: string]: number };
+      dominantColor?: { id: string; hours: number };
+    } 
+  }, event) => {
+    const date = new Date(event.start.dateTime || event.start.date || '');
+    const dateKey = date.toLocaleDateString('en-US', { 
+      month: 'short',
+      day: 'numeric'
+    });
+    const duration = calculateDuration(
+      event.start.dateTime || event.start.date || '',
+      event.end.dateTime || event.end.date || ''
+    );
+    const colorId = event.colorId || 'default';
+
+    if (!acc[dateKey]) {
+      acc[dateKey] = { 
+        count: 0, 
+        hours: 0, 
+        colorHours: {} 
+      };
+    }
+    
+    acc[dateKey].count += 1;
+    acc[dateKey].hours += duration;
+    acc[dateKey].colorHours[colorId] = (acc[dateKey].colorHours[colorId] || 0) + duration;
+    
+    // Update dominant color
+    const currentDominantHours = acc[dateKey].dominantColor?.hours || 0;
+    if (acc[dateKey].colorHours[colorId] > currentDominantHours) {
+      acc[dateKey].dominantColor = { 
+        id: colorId, 
+        hours: acc[dateKey].colorHours[colorId] 
+      };
+    }
+    
+    return acc;
+  }, {});
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
@@ -179,18 +252,8 @@ export default function Wrapped() {
 
         <div className="space-y-6">
           <div className="bg-blue-50 p-4 rounded-lg">
-            <h2 className="text-xl font-semibold mb-2">Summary</h2>
-            <div className="space-y-4">
-              <p>Total Events: {events.length}</p>
-              <p>Total Time in Events: {Math.round(totalHours * 10) / 10} hours</p>
-              <p>Total Time Between Events: {Math.round(totalGapHours * 10) / 10} hours</p>
-              <p className="text-sm text-gray-600">
-                (Gaps are calculated between events within the same day)
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Pie Chart */}
+            <h2 className="text-xl font-semibold mb-4">Summary</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div className="bg-white p-4 rounded-lg">
                 <h3 className="font-semibold mb-2">Time Distribution</h3>
                 <div className="w-full h-[300px] flex items-center justify-center">
@@ -198,26 +261,142 @@ export default function Wrapped() {
                 </div>
               </div>
 
-              {/* Existing breakdown list */}
-              <div className="bg-white p-4 rounded-lg">
-                <h3 className="font-semibold mb-2">Time Breakdown by Color:</h3>
-                <div className="space-y-2">
-                  {Object.entries(colorBreakdown)
-                    .sort(([, hoursA], [, hoursB]) => hoursB - hoursA)
-                    .map(([colorId, hours]) => (
-                      <div key={colorId} className="flex items-center gap-2">
-                        <div 
-                          className="w-4 h-4 rounded-full" 
-                          style={{ backgroundColor: COLOR_MAP[colorId] || '#9e9e9e' }}
-                        />
-                        <span>
-                          {colorId === 'default' ? 'Default' : COLOR_NAMES[colorId]}: 
-                          {' '}{Math.round(hours * 10) / 10} hours
-                          {' '}({Math.round((hours / totalHours) * 100)}%)
-                        </span>
-                      </div>
-                    ))}
-                </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white rounded-lg overflow-hidden">
+                  <tbody className="divide-y divide-gray-200">
+                    <tr>
+                      <td className="px-4 py-3 font-medium">Total Time Between Events</td>
+                      <td className="px-4 py-3">
+                        {Math.round(totalGapHours * 10) / 10} hours
+                        <div className="text-xs text-gray-500">
+                          (Gaps are calculated between events within the same day)
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3 font-medium">Longest Event{longestEvents.length > 1 ? 's' : ''}</td>
+                      <td className="px-4 py-3">
+                        {longestEvents.length > 0 ? (
+                          <div className="space-y-3">
+                            {longestEvents.map(({ event, duration }) => (
+                              <div key={event.id}>
+                                <div className="font-medium">{event.summary}</div>
+                                <div className="text-sm text-gray-600">
+                                  {Math.round(duration * 10) / 10} hours
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {formatDate(event.start.dateTime || event.start.date || '')}
+                                  {' → '}
+                                  {formatDate(event.end.dateTime || event.end.date || '')}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          'No events'
+                        )}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div className="mt-6">
+              <h2 className="text-xl font-semibold mb-4">Events by Color</h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white rounded-lg overflow-hidden">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Color</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Events</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Time</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Percentage</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {Object.entries(colorBreakdown)
+                      .sort(([, hoursA], [, hoursB]) => hoursB - hoursA)
+                      .map(([colorId, hours]) => (
+                        <tr key={colorId}>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-4 h-4 rounded-full" 
+                                style={{ backgroundColor: COLOR_MAP[colorId] || '#9e9e9e' }}
+                              />
+                              <span>{colorId === 'default' ? 'Default' : COLOR_NAMES[colorId]}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">{eventCountByColor[colorId] || 0}</td>
+                          <td className="px-4 py-3">{Math.round(hours * 10) / 10} hours</td>
+                          <td className="px-4 py-3">{Math.round((hours / totalHours) * 100)}%</td>
+                        </tr>
+                      ))}
+                    <tr className="bg-gray-50 font-medium">
+                      <td className="px-4 py-3">Total</td>
+                      <td className="px-4 py-3">{events.length}</td>
+                      <td className="px-4 py-3">{Math.round(totalHours * 10) / 10} hours</td>
+                      <td className="px-4 py-3">100%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <h2 className="text-xl font-semibold mb-4">Events by Date</h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white rounded-lg overflow-hidden">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Date</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Events</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Time</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Percentage</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Most Common Color</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {Object.entries(dateBreakdown)
+                      .sort(([dateA], [dateB]) => {
+                        const a = new Date(dateA);
+                        const b = new Date(dateB);
+                        return a.getTime() - b.getTime();
+                      })
+                      .map(([date, stats]) => (
+                        <tr key={date}>
+                          <td className="px-4 py-3">{date}</td>
+                          <td className="px-4 py-3">{stats.count}</td>
+                          <td className="px-4 py-3">{Math.round(stats.hours * 10) / 10} hours</td>
+                          <td className="px-4 py-3">
+                            {Math.round((stats.hours / totalHours) * 100)}%
+                          </td>
+                          <td className="px-4 py-3">
+                            {stats.dominantColor && (
+                              <div className="flex items-center gap-2">
+                                <div 
+                                  className="w-3 h-3 rounded-full" 
+                                  style={{ backgroundColor: COLOR_MAP[stats.dominantColor.id] || '#9e9e9e' }}
+                                />
+                                <span>
+                                  {stats.dominantColor.id === 'default' ? 'Default' : COLOR_NAMES[stats.dominantColor.id]}
+                                  {' '}({Math.round(stats.dominantColor.hours * 10) / 10}h)
+                                </span>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    <tr className="bg-gray-50 font-medium">
+                      <td className="px-4 py-3">Total</td>
+                      <td className="px-4 py-3">{events.length}</td>
+                      <td className="px-4 py-3">{Math.round(totalHours * 10) / 10} hours</td>
+                      <td className="px-4 py-3">100%</td>
+                      <td className="px-4 py-3">-</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
