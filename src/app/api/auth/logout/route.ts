@@ -3,12 +3,9 @@ import { cookies } from 'next/headers';
 
 export async function POST() {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     
-    // Remove the auth cookie
     cookieStore.delete('gcal_auth');
-    
-    // Remove any other related cookies or stored data
     cookieStore.delete('gcal_wrapped_data');
 
     return NextResponse.json({ success: true });
