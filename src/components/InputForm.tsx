@@ -6,6 +6,8 @@ import DatePicker from "./DatePicker";
 import Dropdown from "./Dropdown";
 import { useGoogleLogin } from '@react-oauth/google';
 import { useWrapped } from '@/context/WrappedContext';
+import { useAuth } from '@/context/AuthContext';
+
 interface Calendar {
   id: string;
   summary: string;
@@ -14,6 +16,7 @@ interface Calendar {
 const InputForm: React.FC = () => {
   const router = useRouter();
   const { setEvents, setDateRange, setIsDataLoaded } = useWrapped();
+  const { setIsAuthenticated: setAuthIsAuthenticated } = useAuth();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -84,6 +87,8 @@ const InputForm: React.FC = () => {
 
         if (response.ok) {
           setAccessToken(tokenResponse.access_token);
+          // Update authentication state immediately
+          setAuthIsAuthenticated(true);
           // Fetch calendars...
           const calResponse = await fetch('/api/calendar/calendars', {
             method: 'POST',

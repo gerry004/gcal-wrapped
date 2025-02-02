@@ -9,11 +9,20 @@ const Navbar: React.FC = () => {
 
   const handleLogout = async () => {
     try {
+      // Clear localStorage first
+      localStorage.removeItem('calendarEvents');
+      localStorage.removeItem('calendarDateRange');
+
+      // Make the logout API call
       await fetch('/api/auth/logout', {
         method: 'POST',
       });
+      
       setIsAuthenticated(false);
+      
+      // Navigate to homepage
       router.push('/');
+      
       // Reload the page to reset all states
       window.location.reload();
     } catch (error) {
