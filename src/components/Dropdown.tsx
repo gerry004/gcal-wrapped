@@ -2,21 +2,23 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 interface DropdownProps {
-  value?: string;
+  value: string;
   onSelect: (value: string) => void;
   options: string[];
-  optionLabels?: string[];
-  placeholder: string;
+  optionLabels: string[];
+  placeholder?: string;
   disabled?: boolean;
+  renderOption?: (option: string, label: string) => React.ReactNode;
 }
 
-const Dropdown: React.FC<DropdownProps> = ({ 
-  value, 
-  onSelect, 
-  options, 
-  optionLabels, 
-  placeholder, 
-  disabled 
+const Dropdown: React.FC<DropdownProps> = ({
+  value,
+  onSelect,
+  options,
+  optionLabels,
+  placeholder = "Select an option",
+  disabled = false,
+  renderOption
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -40,8 +42,12 @@ const Dropdown: React.FC<DropdownProps> = ({
         className="relative w-full border border-gray-300 px-4 py-2 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-base text-left flex justify-between items-center"
         disabled={disabled}
       >
-        <span className="truncate">
-          {value ? (optionLabels?.[options.indexOf(value)] || value) : placeholder}
+        <span className="truncate flex items-center gap-2">
+          {value && renderOption ? (
+            renderOption(value, optionLabels[options.indexOf(value)])
+          ) : (
+            value ? optionLabels[options.indexOf(value)] : placeholder
+          )}
         </span>
         <svg className="fill-current h-4 w-4 ml-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
           <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
@@ -59,7 +65,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                 setIsOpen(false);
               }}
             >
-              {optionLabels?.[index] || option}
+              {renderOption ? renderOption(option, optionLabels[index]) : optionLabels[index]}
             </li>
           ))}
         </ul>

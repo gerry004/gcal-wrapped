@@ -29,6 +29,8 @@ interface WrappedContextType {
   isDataLoaded: boolean;
   setIsDataLoaded: (loaded: boolean) => void;
   isInitialized: boolean;
+  defaultColorId: string;
+  setDefaultColorId: (colorId: string) => void;
 }
 
 const WrappedContext = createContext<WrappedContextType | undefined>(undefined);
@@ -37,6 +39,7 @@ export function WrappedProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useState<Event[]>([]);
   const [dateRange, setDateRange] = useState<DateRange | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [defaultColorId, setDefaultColorId] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Load data from localStorage on mount
@@ -44,11 +47,15 @@ export function WrappedProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') {
       const storedEvents = localStorage.getItem('calendarEvents');
       const storedDateRange = localStorage.getItem('calendarDateRange');
+      const storedDefaultColor = localStorage.getItem('defaultColorId');
       
       if (storedEvents && storedDateRange) {
         setEvents(JSON.parse(storedEvents));
         setDateRange(JSON.parse(storedDateRange));
         setIsDataLoaded(true);
+      }
+      if (storedDefaultColor) {
+        setDefaultColorId(storedDefaultColor);
       }
       setIsInitialized(true);
     }
@@ -71,7 +78,14 @@ export function WrappedProvider({ children }: { children: ReactNode }) {
     if (!loaded) {
       localStorage.removeItem('calendarEvents');
       localStorage.removeItem('calendarDateRange');
+      localStorage.removeItem('defaultColorId');
+      setDefaultColorId('');
     }
+  };
+
+  const handleSetDefaultColorId = (colorId: string) => {
+    setDefaultColorId(colorId);
+    localStorage.setItem('defaultColorId', colorId);
   };
 
   return (
@@ -82,7 +96,9 @@ export function WrappedProvider({ children }: { children: ReactNode }) {
       setDateRange: handleSetDateRange,
       isDataLoaded,
       setIsDataLoaded: handleSetIsDataLoaded,
-      isInitialized
+      isInitialized,
+      defaultColorId,
+      setDefaultColorId: handleSetDefaultColorId
     }}>
       {children}
     </WrappedContext.Provider>

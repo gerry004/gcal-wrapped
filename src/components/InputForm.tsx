@@ -13,9 +13,16 @@ interface Calendar {
   summary: string;
 }
 
+// Update color interface and data to match Google Calendar colors
+interface CalendarColor {
+  id: string;
+  background: string;
+  name: string;
+}
+
 const InputForm: React.FC = () => {
   const router = useRouter();
-  const { setEvents, setDateRange, setIsDataLoaded } = useWrapped();
+  const { setEvents, setDateRange, setIsDataLoaded, setDefaultColorId } = useWrapped();
   const { setIsAuthenticated: setAuthIsAuthenticated } = useAuth();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -23,7 +30,23 @@ const InputForm: React.FC = () => {
   const [events, setEventsState] = useState<any[]>([]);
   const [calendars, setCalendars] = useState<Calendar[]>([]);
   const [selectedCalendar, setSelectedCalendar] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  // Update calendar colors data to match Google Calendar's official colors
+  const calendarColors: CalendarColor[] = [
+    { id: '1', background: '#7986cb', name: 'Lavender' },
+    { id: '2', background: '#33b679', name: 'Sage' },
+    { id: '3', background: '#8e24aa', name: 'Grape' },
+    { id: '4', background: '#e67c73', name: 'Flamingo' },
+    { id: '5', background: '#f6c026', name: 'Banana' },
+    { id: '6', background: '#f5511d', name: 'Tangerine' },
+    { id: '7', background: '#039be5', name: 'Peacock' },
+    { id: '8', background: '#616161', name: 'Graphite' },
+    { id: '9', background: '#3f51b5', name: 'Blueberry' },
+    { id: '10', background: '#0b8043', name: 'Basil' },
+    { id: '11', background: '#d60000', name: 'Tomato' }
+  ];
 
   useEffect(() => {
     // Check for existing token on component mount
@@ -142,7 +165,14 @@ const InputForm: React.FC = () => {
       return;
     }
 
+    if (!selectedColor) {
+      setError('Please select a calendar color');
+      return;
+    }
+
     try {
+      console.log('Setting default color:', selectedColor);
+      
       const response = await fetch('/api/calendar/events', {
         method: 'POST',
         headers: {
@@ -152,7 +182,8 @@ const InputForm: React.FC = () => {
           accessToken,
           calendarId: selectedCalendar,
           startDate: startDate,
-          endDate: endDate
+          endDate: endDate,
+          colorId: selectedColor
         }),
       });
       
@@ -163,9 +194,11 @@ const InputForm: React.FC = () => {
         return;
       }
 
-      // Update context (this will now also save to localStorage)
+      // Update context
       setEvents(data.events);
       setDateRange({ startDate, endDate });
+      setDefaultColorId(selectedColor);
+      console.log('Default color set to:', selectedColor);
       setIsDataLoaded(true);
       router.push('/wrapped');
     } catch (error) {
@@ -193,14 +226,43 @@ const InputForm: React.FC = () => {
       </div>
       
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
-        <Dropdown
-          value={selectedCalendar}
-          onSelect={setSelectedCalendar}
-          options={calendars.map(cal => cal.id)}
-          optionLabels={calendars.map(cal => cal.summary)}
-          placeholder="Select a calendar"
-          disabled={!accessToken}
-        />
+        <div className="flex flex-col gap-1">
+          <label htmlFor="calendar-select" className="text-sm font-medium text-gray-700">
+            Calendar
+          </label>
+          <Dropdown
+            value={selectedCalendar}
+            onSelect={setSelectedCalendar}
+            options={calendars.map(cal => cal.id)}
+            optionLabels={calendars.map(cal => cal.summary)}
+            placeholder="Select a calendar"
+            disabled={!accessToken}
+          />
+        </div>
+        
+        <div className="flex flex-col gap-1">
+          <label htmlFor="color-select" className="text-sm font-medium text-gray-700">
+            Default Event Color
+          </label>
+          <Dropdown
+            value={selectedColor}
+            onSelect={setSelectedColor}
+            options={calendarColors.map(color => color.id)}
+            optionLabels={calendarColors.map(color => color.name)}
+            placeholder="Select a calendar color"
+            disabled={!accessToken}
+            renderOption={(option, label) => (
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-4 h-4 rounded-full" 
+                  style={{ backgroundColor: calendarColors.find(c => c.id === option)?.background }}
+                />
+                <span>{label}</span>
+              </div>
+            )}
+          />
+        </div>
+        
         <DatePicker
           id="start-date"
           label="Start Date"

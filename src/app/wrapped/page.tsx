@@ -79,27 +79,7 @@ const calculateDailyGaps = (events: Event[]): number => {
   return totalGapHours;
 };
 
-// Add this helper function to get chart data
-const getChartData = (colorBreakdown: { [key: string]: number }) => {
-  const sortedEntries = Object.entries(colorBreakdown)
-    .sort(([, hoursA], [, hoursB]) => hoursB - hoursA);
-
-  return {
-    labels: sortedEntries.map(([colorId]) => 
-      colorId === 'default' ? 'Default' : COLOR_NAMES[colorId]
-    ),
-    datasets: [{
-      data: sortedEntries.map(([, hours]) => hours),
-      backgroundColor: sortedEntries.map(([colorId]) => 
-        COLOR_MAP[colorId] || '#9e9e9e'
-      ),
-      borderColor: sortedEntries.map(() => '#fff'),
-      borderWidth: 1,
-    }],
-  };
-};
-
-// Add chart options
+// Move chartOptions outside since it doesn't depend on any component state
 const chartOptions = {
   plugins: {
     legend: {
@@ -124,14 +104,26 @@ const chartOptions = {
 
 export default function Wrapped() {
   const router = useRouter();
-  const { events, dateRange, isDataLoaded, isInitialized } = useWrapped();
+  const { events, dateRange, isDataLoaded, isInitialized, defaultColorId } = useWrapped();
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Keep all useEffect hooks together at the top
   useEffect(() => {
     if (isInitialized && !isDataLoaded) {
       router.push('/');
     }
   }, [isInitialized, isDataLoaded, router]);
+
+  useEffect(() => {
+    console.log('Default Color ID:', defaultColorId);
+  }, [defaultColorId]);
+
+  useEffect(() => {
+    if (events.length > 0) {
+      console.log('Color breakdown:', colorBreakdown);
+      console.log('Default color being used:', COLOR_MAP[defaultColorId]);
+    }
+  }, [events, defaultColorId]);
 
   if (!isInitialized || !isDataLoaded) {
     return <div>Loading...</div>;
@@ -146,6 +138,26 @@ export default function Wrapped() {
       hour: 'numeric',
       minute: 'numeric',
     });
+  };
+
+  // Move getChartData inside the component
+  const getChartData = (colorBreakdown: { [key: string]: number }) => {
+    const sortedEntries = Object.entries(colorBreakdown)
+      .sort(([, hoursA], [, hoursB]) => hoursB - hoursA);
+
+    return {
+      labels: sortedEntries.map(([colorId]) => 
+        colorId === 'default' ? COLOR_NAMES[defaultColorId] || 'Default' : COLOR_NAMES[colorId]
+      ),
+      datasets: [{
+        data: sortedEntries.map(([, hours]) => hours),
+        backgroundColor: sortedEntries.map(([colorId]) => 
+          colorId === 'default' ? COLOR_MAP[defaultColorId] || '#9e9e9e' : COLOR_MAP[colorId]
+        ),
+        borderColor: sortedEntries.map(() => '#fff'),
+        borderWidth: 1,
+      }],
+    };
   };
 
   // Add this before the return statement
@@ -337,9 +349,13 @@ export default function Wrapped() {
                             <div className="flex items-center gap-2">
                               <div 
                                 className="w-4 h-4 rounded-full" 
-                                style={{ backgroundColor: COLOR_MAP[colorId] || '#9e9e9e' }}
+                                style={{ 
+                                  backgroundColor: colorId === 'default' 
+                                    ? COLOR_MAP[defaultColorId] || '#9e9e9e' 
+                                    : COLOR_MAP[colorId] || '#9e9e9e' 
+                                }}
                               />
-                              <span>{colorId === 'default' ? 'Default' : COLOR_NAMES[colorId]}</span>
+                              <span>{colorId === 'default' ? COLOR_NAMES[defaultColorId] || 'Default' : COLOR_NAMES[colorId]}</span>
                             </div>
                           </td>
                           <td className="px-4 py-3">{eventCountByColor[colorId] || 0}</td>
@@ -391,10 +407,16 @@ export default function Wrapped() {
                               <div className="flex items-center gap-2">
                                 <div 
                                   className="w-3 h-3 rounded-full" 
-                                  style={{ backgroundColor: COLOR_MAP[stats.dominantColor.id] || '#9e9e9e' }}
+                                  style={{ 
+                                    backgroundColor: stats.dominantColor.id === 'default'
+                                      ? COLOR_MAP[defaultColorId] || '#9e9e9e'
+                                      : COLOR_MAP[stats.dominantColor.id] || '#9e9e9e' 
+                                  }}
                                 />
                                 <span>
-                                  {stats.dominantColor.id === 'default' ? 'Default' : COLOR_NAMES[stats.dominantColor.id]}
+                                  {stats.dominantColor.id === 'default' 
+                                    ? COLOR_NAMES[defaultColorId] || 'Default'
+                                    : COLOR_NAMES[stats.dominantColor.id]}
                                   {' '}({Math.round(stats.dominantColor.hours * 10) / 10}h)
                                 </span>
                               </div>
@@ -458,9 +480,11 @@ export default function Wrapped() {
                   key={event.id} 
                   className="p-4 hover:bg-gray-50"
                   style={{
-                    borderLeft: event.colorId 
-                      ? `4px solid ${COLOR_MAP[event.colorId] || '#9e9e9e'}`
-                      : '4px solid #9e9e9e'
+                    borderLeft: `4px solid ${
+                      event.colorId 
+                        ? COLOR_MAP[event.colorId] 
+                        : COLOR_MAP[defaultColorId] || '#9e9e9e'
+                    }`
                   }}
                 >
                   <h3 className="font-semibold">{event.summary}</h3>
