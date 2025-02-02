@@ -79,15 +79,6 @@ const calculateDailyGaps = (events: Event[]): number => {
   return totalGapHours;
 };
 
-// Add this type definition for the tooltip context
-type TooltipContext = {
-  label?: string;
-  raw?: number;
-  dataset: {
-    data: number[];
-  };
-};
-
 // Update chartOptions with proper typing
 const chartOptions: ChartOptions<'pie'> = {
   plugins: {
