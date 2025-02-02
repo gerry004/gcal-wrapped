@@ -7,6 +7,7 @@ import Dropdown from "./Dropdown";
 import { useGoogleLogin } from '@react-oauth/google';
 import { useWrapped } from '@/context/WrappedContext';
 import { useAuth } from '@/context/AuthContext';
+import Image from 'next/image';
 
 interface Calendar {
   id: string;
@@ -216,7 +217,13 @@ const InputForm: React.FC = () => {
               : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
           }`}
         >
-          <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
+          <Image 
+            src="https://www.google.com/favicon.ico" 
+            alt="Google" 
+            width={20} 
+            height={20} 
+            className="w-5 h-5"
+          />
           {accessToken ? 'Connected to Calendar' : 'Sign in with Google'}
         </button>
       </div>
