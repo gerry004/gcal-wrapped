@@ -128,7 +128,7 @@ const InputForm: React.FC = () => {
         console.error('Error storing token:', error);
       }
     },
-    scope: 'https://www.googleapis.com/auth/calendar.readonly',
+    scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
     onError: (errorResponse) => {
       console.error('Login Failed:', errorResponse);
     },
