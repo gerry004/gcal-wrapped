@@ -6,7 +6,6 @@ import DatePicker from "./DatePicker";
 import Dropdown from "./Dropdown";
 import { useGoogleLogin } from '@react-oauth/google';
 import { useWrapped } from '@/context/WrappedContext';
-
 interface Calendar {
   id: string;
   summary: string;
@@ -27,6 +26,23 @@ const InputForm: React.FC = () => {
     // Check for existing token on component mount
     checkExistingToken();
   }, []);
+
+  useEffect(() => {
+    // Clear errors immediately when conditions are met
+    if (error === 'Please sign in with Google first' && accessToken) {
+      setError(null);
+    } else if (error === 'Please select a calendar' && selectedCalendar) {
+      setError(null);
+    } else if (error === 'Please select both start and end dates' && startDate && endDate) {
+      setError(null);
+    } else if (error === 'End date must be after start date' && startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (end >= start) {
+        setError(null);
+      }
+    }
+  }, [accessToken, selectedCalendar, startDate, endDate, error]);
 
   const checkExistingToken = async () => {
     try {
@@ -154,15 +170,20 @@ const InputForm: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center bg-gray-100 p-6 rounded-lg shadow-md">
+    <div className="flex flex-col items-center bg-gray-100 p-6 rounded-lg shadow-md w-[500px]">
       <h2 className="text-gray-700 text-2xl font-semibold my-2">Generate Calendar Wrapped</h2>
       <div className="mb-4 w-full">
         <button
           onClick={handleGoogleSignIn}
-          className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-50 transition-colors w-full"
+          disabled={!!accessToken}
+          className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors w-full ${
+            accessToken 
+              ? 'bg-green-100 text-green-700 border border-green-300 cursor-default'
+              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+          }`}
         >
           <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
-          Sign in with Google
+          {accessToken ? 'Connected to Calendar' : 'Sign in with Google'}
         </button>
       </div>
       
