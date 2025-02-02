@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { google } from 'googleapis';
+import { Event } from '@/context/WrappedContext';
 
 const COOKIE_NAME = 'gcal_auth';
 
@@ -10,7 +11,7 @@ interface TokenData {
 }
 
 interface WrappedData {
-  events: any[];
+  events: Event[];
   dateRange: {
     startDate: string;
     endDate: string;

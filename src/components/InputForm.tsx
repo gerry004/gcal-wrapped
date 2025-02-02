@@ -27,7 +27,6 @@ const InputForm: React.FC = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [events, setEventsState] = useState<any[]>([]);
   const [calendars, setCalendars] = useState<Calendar[]>([]);
   const [selectedCalendar, setSelectedCalendar] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
@@ -171,8 +170,6 @@ const InputForm: React.FC = () => {
     }
 
     try {
-      console.log('Setting default color:', selectedColor);
-      
       const response = await fetch('/api/calendar/events', {
         method: 'POST',
         headers: {
@@ -198,7 +195,6 @@ const InputForm: React.FC = () => {
       setEvents(data.events);
       setDateRange({ startDate, endDate });
       setDefaultColorId(selectedColor);
-      console.log('Default color set to:', selectedColor);
       setIsDataLoaded(true);
       router.push('/wrapped');
     } catch (error) {
@@ -287,19 +283,6 @@ const InputForm: React.FC = () => {
           Generate Wrapped
         </button>
       </form>
-
-      {events.length > 0 && (
-        <div className="mt-4 w-full">
-          <h3 className="text-lg font-semibold mb-2">Today's Events:</h3>
-          <ul className="space-y-2">
-            {events.map((event, index) => (
-              <li key={index} className="p-2 bg-white rounded shadow">
-                {event.summary}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 };

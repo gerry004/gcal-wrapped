@@ -79,7 +79,16 @@ const calculateDailyGaps = (events: Event[]): number => {
   return totalGapHours;
 };
 
-// Move chartOptions outside since it doesn't depend on any component state
+// Add this type definition for the tooltip context
+type TooltipContext = {
+  label?: string;
+  raw?: number;
+  dataset: {
+    data: number[];
+  };
+};
+
+// Update chartOptions with proper typing
 const chartOptions = {
   plugins: {
     legend: {
@@ -91,7 +100,7 @@ const chartOptions = {
     },
     tooltip: {
       callbacks: {
-        label: (context: any) => {
+        label: (context: TooltipContext) => {
           const label = context.label || '';
           const value = context.raw || 0;
           const percentage = ((value / context.dataset.data.reduce((a: number, b: number) => a + b, 0)) * 100).toFixed(1);
@@ -113,17 +122,6 @@ export default function Wrapped() {
       router.push('/');
     }
   }, [isInitialized, isDataLoaded, router]);
-
-  useEffect(() => {
-    console.log('Default Color ID:', defaultColorId);
-  }, [defaultColorId]);
-
-  useEffect(() => {
-    if (events.length > 0) {
-      console.log('Color breakdown:', colorBreakdown);
-      console.log('Default color being used:', COLOR_MAP[defaultColorId]);
-    }
-  }, [events, defaultColorId]);
 
   if (!isInitialized || !isDataLoaded) {
     return <div>Loading...</div>;
@@ -283,7 +281,7 @@ export default function Wrapped() {
               <div className="bg-white p-4 rounded-lg">
                 <h3 className="font-semibold mb-2">Time Distribution</h3>
                 <div className="w-full h-[300px] flex items-center justify-center">
-                  <Pie data={getChartData(colorBreakdown)} options={chartOptions} />
+                  <Pie data={getChartData(colorBreakdown)} options={chartOptions as any} />
                 </div>
               </div>
 
