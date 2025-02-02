@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
 import { useWrapped, type Event } from '@/context/WrappedContext';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, ChartOptions } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
 
 // Register ChartJS components
@@ -89,7 +89,7 @@ type TooltipContext = {
 };
 
 // Update chartOptions with proper typing
-const chartOptions = {
+const chartOptions: ChartOptions<'pie'> = {
   plugins: {
     legend: {
       position: 'right' as const,
@@ -100,10 +100,11 @@ const chartOptions = {
     },
     tooltip: {
       callbacks: {
-        label: (context: TooltipContext) => {
+        label: (context) => {
           const label = context.label || '';
-          const value = context.raw || 0;
-          const percentage = ((value / context.dataset.data.reduce((a: number, b: number) => a + b, 0)) * 100).toFixed(1);
+          const value = context.raw as number || 0;
+          const total = (context.dataset.data as number[]).reduce((a, b) => a + b, 0);
+          const percentage = ((value / total) * 100).toFixed(1);
           return `${label}: ${value.toFixed(1)} hours (${percentage}%)`;
         },
       },
@@ -281,7 +282,7 @@ export default function Wrapped() {
               <div className="bg-white p-4 rounded-lg">
                 <h3 className="font-semibold mb-2">Time Distribution</h3>
                 <div className="w-full h-[300px] flex items-center justify-center">
-                  <Pie data={getChartData(colorBreakdown)} options={chartOptions as any} />
+                  <Pie data={getChartData(colorBreakdown)} options={chartOptions} />
                 </div>
               </div>
 
