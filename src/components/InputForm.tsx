@@ -218,13 +218,13 @@ const InputForm: React.FC = () => {
           }`}
         >
           <Image 
-            src="https://www.google.com/favicon.ico" 
+            src="/favicon.ico"
             alt="Google" 
             width={20} 
             height={20} 
             className="w-5 h-5"
           />
-          {accessToken ? 'Connected to Calendar' : 'Sign in with Google'}
+          {accessToken ? 'Connected to Google Calendar' : 'Connect Google Calendar'}
         </button>
       </div>
       
