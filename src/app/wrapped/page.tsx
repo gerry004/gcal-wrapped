@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
 import { useWrapped, type Event } from '@/context/WrappedContext';
@@ -125,6 +125,7 @@ const chartOptions = {
 export default function Wrapped() {
   const router = useRouter();
   const { events, dateRange, isDataLoaded, isInitialized } = useWrapped();
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (isInitialized && !isDataLoaded) {
@@ -236,6 +237,19 @@ export default function Wrapped() {
     
     return acc;
   }, {});
+
+  // Update the filteredEvents calculation to handle undefined summaries
+  const filteredEvents = events.filter(event => 
+    event.summary?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false
+  );
+
+  // Add this calculation before the return statement
+  const filteredEventsTime = filteredEvents.reduce((total, event) => {
+    return total + calculateDuration(
+      event.start.dateTime || event.start.date || '',
+      event.end.dateTime || event.end.date || ''
+    );
+  }, 0);
 
   return (
     <div className="min-h-screen bg-white">
@@ -402,9 +416,44 @@ export default function Wrapped() {
           </div>
 
           <div className="bg-white shadow rounded-lg">
-            <h2 className="text-xl font-semibold p-4 border-b">Event Timeline</h2>
+            <div className="p-4 border-b">
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="text-xl font-semibold">Event Timeline</h2>
+                <div className="flex-1 max-w-md">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search events..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {searchQuery && (
+              <div className="mt-4 flex items-center justify-end gap-8 text-sm px-4 pb-4 border-b">
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500">Found:</span>
+                  <span className="font-medium">{filteredEvents.length} events</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500">Total time:</span>
+                  <span className="font-medium">{Math.round(filteredEventsTime * 10) / 10} hours</span>
+                </div>
+              </div>
+            )}
             <div className="divide-y">
-              {events.map((event) => (
+              {filteredEvents.map((event) => (
                 <div 
                   key={event.id} 
                   className="p-4 hover:bg-gray-50"
