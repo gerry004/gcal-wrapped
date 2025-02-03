@@ -236,8 +236,8 @@ const InputForm: React.FC = () => {
           <Dropdown
             value={selectedCalendar}
             onSelect={setSelectedCalendar}
-            options={calendars.map(cal => cal.id)}
-            optionLabels={calendars.map(cal => cal.summary)}
+            options={calendars?.map(cal => cal.id) || []}
+            optionLabels={calendars?.map(cal => cal.summary) || []}
             placeholder="Select a calendar"
             disabled={!accessToken}
           />
